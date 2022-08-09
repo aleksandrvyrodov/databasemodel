@@ -16,6 +16,7 @@ class SimpleBuilder
   const CHAIN = 0b1 << 4;
   const FREE  = 0b1 << 3;
   const UNLIMIT  = 0;
+  const SELECT  = 'SELECT';
   const LIMIT  = 'LIMIT';
   const OFFSET = 0b1 << 2;
   const WHERE  = 'WHERE';
@@ -26,7 +27,9 @@ class SimpleBuilder
   const OR  = 'OR';
   const ASC  = 'ASC';
   const DESC  = 'DESC';
+  const AS  = 'AS';
 
+  private array $select = [];
   private array $where = [];
   private array $order = [];
   private int $offset = 0;
@@ -107,6 +110,9 @@ class SimpleBuilder
             }
           };
 
+          if (array_key_exists(self::SELECT, $params))
+            $fn(self::SELECT, 'select');
+
           if (array_key_exists(self::WHERE, $params))
             $fn(self::WHERE, 'where');
 
@@ -160,6 +166,23 @@ class SimpleBuilder
     return $chain;
   }
 
+  public function select(?string $select = null, ?string $alias = null)
+  {
+    if (is_null($select)) {
+      if (!$this->_storage_sleep)
+        $storage = $this->_storage['select'] ?? [];
+      $select = array_merge(
+        $storage ?? [],
+        $this->prop($this->select)
+      );
+      if (empty($select))
+        return self::SELECT . ' * ';
+      $select = array_map(fn ($select_item) => implode(' AS ', $select_item), $select);
+      return self::SELECT . ' *, ' . implode(',', $select);
+    } else
+      return $this->prop($this->select[], [$select, $alias]);
+  }
+
   public function where(string $where = null, string $cond = self::AND)
   {
     if (is_null($where)) {
@@ -170,7 +193,7 @@ class SimpleBuilder
         $this->prop($this->where)
       );
       if (empty($where))
-        return null;
+        return self::WHERE . ' 1 ';
       $where = array_map(fn ($where_item) => implode(' ', $where_item), $where);
       return self::WHERE . ' 1 ' . implode(' ', $where);
     } else
@@ -232,16 +255,21 @@ class SimpleBuilder
         ->prop($this->free, $free);
   }
 
-  public function build()
+  public function build(): array
   {
     if (($free = $this->free()))
-      $returned =  $free;
+      $query_end = trim($free);
     else
-      $returned = trim(implode(' ', [
+      $query_end = trim(implode(' ', [
         $this->where(),
         $this->order(),
         $this->limitation()
       ]));
+
+    $returned = [
+      trim($this->select()),
+      $query_end
+    ];
 
     $this->_storage_sleep = false;
 
