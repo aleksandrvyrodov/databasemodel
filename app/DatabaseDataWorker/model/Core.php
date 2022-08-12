@@ -4,7 +4,7 @@ namespace JrAppBox\DatabaseDataWorker\Model;
 
 use JrAppBox\DatabaseDataWorker\Error\DDWException;
 
-abstract class Core implements IModel, \Stringable
+abstract class Core implements IModel
 {
   const UPDATE = 0b0001;
   const CHECK  = 0b0010;
@@ -14,12 +14,12 @@ abstract class Core implements IModel, \Stringable
 
   const CHAIN = true;
 
-
   const SET = 0;
   const GET = 1;
 
   public array $freeQ = [];
   protected int $_state = self::VOID;
+  protected array $_raw = [];
 
   static protected array $Query = [];
 
@@ -32,9 +32,17 @@ abstract class Core implements IModel, \Stringable
 
 
   #region DATA SET/GET
-  protected function _data_transformation($prop, $data, $do)
+  protected function _data_transformation(string $prop, $data, int $do)
   {
     return $data;
+  }
+
+  protected function _storage_raw(?array $raw = null)
+  {
+    if (is_null($raw))
+      return $this->_raw;
+    else
+      return $this;
   }
 
   protected function _process_raw(array $raw)
@@ -48,14 +56,13 @@ abstract class Core implements IModel, \Stringable
     return $this;
   }
 
-  protected function &_prop_iterator()
+  protected function &_prop_iterator(): \Generator
   {
     foreach (array_filter((new \ReflectionClass($this))
         ->getProperties(
           \ReflectionProperty::IS_PROTECTED
         ),
       fn ($RefProp) => $RefProp->class === static::class
-        && $RefProp->name !== (static::class)::P_KEY
         && $RefProp->name[0] !== '_'
     ) as $RefProp)
       yield $RefProp->name => $this->{$RefProp->name};
@@ -65,7 +72,7 @@ abstract class Core implements IModel, \Stringable
   {
     $prepare = [];
     foreach ($this->_prop_iterator() as $name => $value) {
-      $prop = $this->_data_transformation($name, $value, self::GET);
+      $prop = $this->_data_transformation((string)$name, $value, self::GET);
       if ($prop !== false)
         $prepare[$name] = $prop;
     }
@@ -94,7 +101,7 @@ abstract class Core implements IModel, \Stringable
       return null;
   }
 
-  public function setProp($name = '', $value, $mirror = null): IModel
+  public function setProp(string $name = '', $value, &$mirror = null): IModel
   {
     try {
       if (property_exists($this, $name))
@@ -110,7 +117,7 @@ abstract class Core implements IModel, \Stringable
   #endregion
 
   #region STATE
-  protected function _state_set($state, $force = false)
+  protected function _state_set(int $state, bool $force = false)
   {
     switch ($state) {
       case self::EXISTS:
@@ -150,5 +157,4 @@ abstract class Core implements IModel, \Stringable
     return (bool)($this->_state & self::EXISTS);
   }
   #endregion
-
 }

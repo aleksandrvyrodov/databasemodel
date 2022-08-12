@@ -4,18 +4,18 @@ namespace JrAppBox\DatabaseDataWorker\Contractor;
 
 use JrAppBox\DatabaseDataWorker\Contractor\Core\Connector;
 use JrAppBox\DatabaseDataWorker\Contractor\SimpleBuilder as SB;
+use JrAppBox\DatabaseDataWorker\Error\DDWError;
+use JrAppBox\DatabaseDataWorker\Error\DDWException;
 
-class SimpleQuery implements IQuery
+class SimpleQuery
 {
-  public string $table;
-  public string $p_key;
+  protected string $table;
   private SB $SimpleBuilder;
 
-  public function __construct(string $table, string $p_key)
+  public function __construct(string $table)
   {
     $this->SimpleBuilder = new SB;
     $this->table  = $table;
-    $this->p_key  = $p_key;
   }
 
   private function query(string $sql, array $param, \Closure $prism, ?\PDOException &$error = null)
@@ -26,7 +26,7 @@ class SimpleQuery implements IQuery
       $PDOSt->execute($param);
       return $prism($PDO, $PDOSt);
     } catch (\PDOException $PDOEx) {
-      $error = $PDOEx;
+      DDWError::Add('Fail query', 1000, $PDOEx);
       return false;
     }
   }

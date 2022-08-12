@@ -27,8 +27,26 @@ require_once __DIR__ . '/app/inf.php';
   ->register();
 #endregion
 
-$PkOnly = new PkOnly;
-$PkOnlyAi = new PkOnlyAi;
+// $PkOnly = new PkOnly;
+// $PkOnlyAi = new PkOnlyAi;
+/*-----------------------------------------*/
+
+$PropOnly = PropOnly::Create();
+
+try {
+  $PropOnly
+    ->setProp('prop', 'Hello')
+    ->setProp('value', 'World')
+    ->save();
+} catch (\Throwable $th) {
+  echo "<pre>";
+  var_dump($th->getMessage());
+  echo "</pre>";
+}
+
+/*-----------------------------------------*/
+
+
 
 $SB = new SimpleBuilder;
 
@@ -40,11 +58,11 @@ $SB
   ->where('yy = 1', 'OR')
   ->order('name', 'ASC')
   ->order('id', 'DESC')
-  ->limitation(1) */
-  ;
+  ->limitation(1) */;
 
 echo "<pre>";
+// var_dump(PropOnly::Get());
 var_dump($SB->build());
-var_dump($PkOnly);
-var_dump($PkOnlyAi);
+var_dump($PropOnly);
+// var_dump($PkOnlyAi);
 echo "</pre>";

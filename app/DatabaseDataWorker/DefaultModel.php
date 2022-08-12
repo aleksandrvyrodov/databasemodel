@@ -9,29 +9,17 @@ use JrAppBox\DatabaseDataWorker\Model\IModel;
 
 abstract class DefaultModel extends Core implements IModel
 {
-
   #region INITED
   static protected function InitQuery()
   {
     empty(self::$Query[static::class])
-      && self::$Query[static::class] = new SimpleQuery((static::class)::TABLE, (static::class)::P_KEY);
+      && self::$Query[static::class] = new SimpleQuery((static::class)::TABLE);
 
     return self::$Query[static::class];
   }
   #endregion
 
   #region ENTRANCE
-
-  static public function Get($key_v = null, $returned = null): ?DefaultModel
-  {
-    self::InitQuery();
-
-    if (is_null($key_v) && $returned !== self::TEMPL)
-      return null;
-    else
-      return static::Create($key_v);
-  }
-
   static public function GetAll(int $limit = 0, int $offset = 0): array
   {
     $Query = self::InitQuery();
@@ -58,22 +46,6 @@ abstract class DefaultModel extends Core implements IModel
     return self::_ListRawToData($Query->list());
   }
 
-  static public function Create($key = null, array $arg = []): DefaultModel
-  {
-    self::InitQuery();
-
-    $key = empty($key) && array_key_exists((static::class)::P_KEY, $arg)
-      ? $arg[(static::class)::P_KEY]
-      : $key;
-
-    $arg = !is_null($key)
-      ? array_merge([(static::class)::P_KEY => $key], $arg)
-      : $arg;
-
-    return (new static($arg))
-      ->load();
-  }
-
   protected static function _ListRawToData(array $list_raw)
   {
     $returned = [];
@@ -81,36 +53,16 @@ abstract class DefaultModel extends Core implements IModel
     foreach ($list_raw as $raw)
       $returned[] = new static($raw, self::EXISTS, false);
 
-
     return $returned;
   }
 
-  protected function __construct(array $raw = [], $state = null, $storage = true)
+  protected function __construct(array $raw = [])
   {
     $this->_process_raw($raw);
-
-    $key = (static::class)::P_KEY;
-    if (is_null($state))
-      $state = $this->{$key} ? self::TEMPL : self::VOID;
-
-    $this->_state_set($state);
   }
   #endregion
 
   #region INTERFACE
-  public function load(?array &$raw = null): DefaultModel
-  {
-    if ($this->ready()) {
-      $raw = $this->dataGet();
-      if ($raw) {
-        $this
-          ->_process_raw($raw)
-          ->_state_set(self::EXISTS, true);
-      }
-    }
-
-    return $this;
-  }
 
   public function save(): DefaultModel
   {
@@ -136,46 +88,6 @@ abstract class DefaultModel extends Core implements IModel
     $this->{$key} = null;
 
     return $this;
-  }
-  #endregion
-
-
-  #region QUERY
-  protected function dataInsert()
-  {
-    $data = $this->_get_maked_data();
-
-    $key = self::$Query[static::class]->insert($data);
-    if ($key) {
-      $this->{(static::class)::P_KEY} = $key;
-      return true;
-    } else
-      return false;
-  }
-
-  protected function dataUpdate()
-  {
-    $data = $this->_get_maked_data();
-    $key = $this->{(static::class)::P_KEY};
-
-    $res = self::$Query[static::class]->update($key, $data);
-    return $res;
-  }
-
-  protected function dataGet()
-  {
-    $key = $this->{(static::class)::P_KEY};
-
-    $res = self::$Query[static::class]->select($key);
-    return $res;
-  }
-
-  protected function dataRemove()
-  {
-    $key = $this->{(static::class)::P_KEY};
-
-    $res = self::$Query[static::class]->remove($key);
-    return $res;
   }
   #endregion
 }
