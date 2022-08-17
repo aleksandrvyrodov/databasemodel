@@ -41,46 +41,51 @@ class SimpleQuery
         ->option($opt);
   }
 
-  public function select($key)
+  public function select()
   {
-    $p_key = $this->p_key;
-    $param = [$key];
+    $where = $this
+      ->params()
+      ->where(SB::WHERE);
+
     $table = $this->table;
     $sql = <<<SQL
       SELECT *
       FROM $table
-      WHERE `$p_key` = ?
+      $where
       LIMIT 1
       SQL;
 
     $res = $this->query(
       $sql,
-      $param,
+      [],
       fn ($PDO, $PDOSt) => $PDOSt->fetch()
     );
     return $res;
   }
 
 
-  public function update($key, $data)
+  public function update($data)
   {
-    $p_key = $this->p_key;
     $update = $data;
-
     $fields = implode(
       ',',
       (fn ($update) => array_walk($update, fn (&$item, $key) => $key && $item = "`$key` = :$key") ? $update : false)($update)
     );
-    $param = array_merge($update, [
+    $param = $update; /* array_merge($update, [
       'k_' . $p_key  => $key,
-    ]);
+    ]); */
+
+    $where = $this
+      ->params()
+      ->where(SB::WHERE);
 
     $table = $this->table;
     $sql = <<<SQL
       UPDATE $table
       SET
         $fields
-      WHERE `$p_key` = :k_$p_key
+      $where
+      LIMIT 1
       SQL;
 
     $res = $this->query(
@@ -115,32 +120,37 @@ class SimpleQuery
     return $res;
   }
 
-  public function remove($key)
+  public function remove()
   {
-    $p_key = $this->p_key;
-    $param = [$key];
     $table = $this->table;
+    $where = $this
+      ->params()
+      ->where(SB::WHERE);
     $sql = <<<SQL
-      DELETE FROM $table WHERE `$p_key` = ? LIMIT 1
+      DELETE
+      FROM $table
+      $where
+      LIMIT 1
       SQL;
 
     $res = $this->query(
       $sql,
-      $param,
+      [],
       fn ($PDO, $PDOSt) => (bool)$PDOSt->rowCount()
     );
 
     return $res;
   }
 
-
   public function list()
   {
-    $param = $this->params(SB::BUILD);
+    [$head_query, $foot_query] = $this->params(SB::BUILD);
+
     $table = $this->table;
     $sql = <<<SQL
-      SELECT * FROM $table
-      $param
+      $head_query
+      FROM $table
+      $foot_query
       SQL;
 
     $res = $this->query(
@@ -148,6 +158,7 @@ class SimpleQuery
       [],
       fn ($PDO, $PDOSt) => $PDOSt->fetchAll()
     );
+
     return $res;
   }
 }
