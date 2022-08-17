@@ -7,17 +7,24 @@ use JrAppBox\DatabaseDataWorker\Model\IModel;
 
 class SimpleStorage
 {
-  private static \SplObjectStorage $Storage;
+  private \SplObjectStorage $Storage;
+  private static SimpleStorage $SimpleStorage;
+  private static array $hash_table = [];
 
-  private static function Init(): \SplObjectStorage
+  private function __construct()
   {
-    if (!isset(self::$Storage))
-      self::$Storage = new \SplObjectStorage();
-
-    return self::$Storage;
+    $this->Storage = new \SplObjectStorage();
   }
 
-  static private function CheckHash(IModel $Model): bool
+  public static function Init(): SimpleStorage
+  {
+    if (!isset(self::$SimpleStorage))
+      self::$SimpleStorage = new self();
+
+    return self::$SimpleStorage;
+  }
+
+  private function CheckHash(IModel $Model): bool
   {
     if (is_null($Model->getHash())) {
       DDWError::Add('Hash model is null', 400);
@@ -26,55 +33,65 @@ class SimpleStorage
       return true;
   }
 
-  static public function Set(IModel &$Model)
+  public function Set(IModel &$Model): SimpleStorage
   {
-    $Storage = self::Init();
+    $Storage = $this->Storage;
 
-    if (self::CheckHash($Model) && !self::Exists($Model))
+    if ($this->CheckHash($Model)) {
       $Storage->attach($Model, $Model->getHash());
-
-    return self::class;
-  }
-
-  static public function &Get(string $hash): ?IModel
-  {
-    $Storage = self::Init();
-
-    while ($Storage->valid()) {
-      if ($hash === $Storage->getInfo())
-        return $Storage->current();
-      else
-        $Storage->next();
+      self::$hash_table[$Model->getHash()] = $Model;
     }
 
+    return $this;
+  }
+
+  public function Get(string $hash): ?IModel
+  {
+    if (isset(self::$hash_table[$hash])) {
+      $Model = self::$hash_table[$hash];
+      if ($this->Exists($Model))
+        return $Model;
+      else
+        unset(self::$hash_table[$hash]);
+    }
     return null;
   }
 
-  static public function Update(IModel $Model)
+  public function Update(IModel $Model): SimpleStorage
   {
-    $Storage = self::Init();
+    $Storage = $this->Storage;
+    $hash = $Model->getHash();
 
-    if (self::Exists($Model))
-      $Storage->attach($Model, $Model->getHash());
+    if ($Model->error())
+      $this->Remove($Model);
+    elseif (!$this->Exists($Model))
+      $this->Set($Model);
+    else {
+      unset(self::$hash_table[$Storage[$Model]->getInfo()]);
+      $Storage[$Model]->setInfo($hash);
+      self::$hash_table[$hash] = get_class($Model);
+    }
 
-    return self::class;
+    return $this;
   }
 
-  static public function Exists(IModel $Model): bool
+  public function Exists(IModel $Model): bool
   {
-    $Storage = self::Init();
+    $Storage = $this->Storage;
 
     return $Storage->contains($Model);
   }
 
-
-  static public function Remove(IModel $Model)
+  public function Remove(IModel $Model): SimpleStorage
   {
-    $Storage = self::Init();
+    $Storage = $this->Storage;
+    $hash = $Model->getHash();
 
-    if (self::Exists($Model))
+    if ($this->Exists($Model)) {
       $Storage->detach($Model);
+      unset(self::$hash_table[$hash]);
+    }
 
-    return self::class;
+    return $this;
   }
 }
