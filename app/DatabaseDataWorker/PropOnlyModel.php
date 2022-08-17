@@ -4,6 +4,7 @@ namespace JrAppBox\DatabaseDataWorker;
 
 use JrAppBox\DatabaseDataWorker\Contractor\SimpleBuilder;
 use JrAppBox\DatabaseDataWorker\Contractor\SimpleQuery;
+use JrAppBox\DatabaseDataWorker\Contractor\SimpleStorage;
 use JrAppBox\DatabaseDataWorker\Error\DDWError;
 use JrAppBox\DatabaseDataWorker\Model\Core;
 use JrAppBox\DatabaseDataWorker\Model\IModel;
@@ -12,6 +13,36 @@ abstract class PropOnlyModel extends Core implements IModel
 {
 
   #region INITED
+  static public function Init(string $returnded, ...$argc)
+  {
+    try {
+      $Query = self::InitQuery();
+      $Vault = self::InitVault();
+    } catch (\Throwable $Th) {
+      DDWError::Add('Fail inited model (' . static::class . ')', 1000, $Th);
+      return false;
+    }
+
+    switch ($returnded) {
+      case SimpleQuery::class:
+        return $Query;
+      case SimpleStorage::class:
+        return $Vault;
+      case static::class:
+        return new static();
+      default:
+        return true;
+    }
+  }
+
+  static protected function InitVault()
+  {
+    !isset(self::$Vault)
+      && self::$Vault = SimpleStorage::Init();
+
+    return self::$Vault;
+  }
+
   static protected function InitQuery()
   {
     empty(self::$Query[static::class])
@@ -27,13 +58,13 @@ abstract class PropOnlyModel extends Core implements IModel
     $chain && $params = array_merge($params, [
       SimpleBuilder::CHAIN => static::class
     ]);
-    $Query = self::InitQuery();
+    $Query = self::Init(SimpleQuery::class);
     return $Query->params($params);
   }
 
   static public function GetAll(int $limit = 0, int $offset = 0): array
   {
-    $Query = self::InitQuery();
+    $Query = self::Init(SimpleQuery::class);
     $Query
       ->params()
       ->clean()
@@ -44,7 +75,7 @@ abstract class PropOnlyModel extends Core implements IModel
 
   static public function List()
   {
-    $Query = self::InitQuery();
+    $Query = self::Init(SimpleQuery::class);
     return self::_ListRawToData($Query->list());
   }
 
@@ -53,7 +84,9 @@ abstract class PropOnlyModel extends Core implements IModel
     $returned = [];
 
     foreach ($list_raw as $raw)
-      $returned[] = new static($raw, self::EXISTS, false);
+      $returned[] = self::$Vault->Get(self::GenerateHash($raw))
+        ?? new static($raw, self::EXISTS, true);
+      // $returned[] = new static($raw, self::EXISTS, true);
 
 
     return $returned;
@@ -61,26 +94,27 @@ abstract class PropOnlyModel extends Core implements IModel
 
   static public function Get($key_v = null, $returned = null): ?PropOnlyModel //FAR
   {
-    self::InitQuery();
-
-    if (is_null($key_v) && $returned !== self::TEMPL)
-      return null;
+    if ($returned === self::TEMPL)
+      return static::Create();
     else
-      return static::Create($key_v);
+      return null;
   }
 
   static public function Create(): PropOnlyModel
   {
-    self::InitQuery();
-
-    return new static();
+    return self::Init(static::class);
   }
 
-  protected function __construct(array $raw = [], $state = self::TEMPL)
+  protected function __construct(array $raw = [], $state = self::TEMPL, $impression = false)
   {
     $this
       ->_process_raw($raw)
       ->_state_set($state);
+
+    if ($impression) {
+      $this->_storage_raw($raw);
+      self::$Vault->Set($this);
+    }
   }
   #endregion
 
@@ -93,7 +127,8 @@ abstract class PropOnlyModel extends Core implements IModel
         $this
           ->_storage_raw($raw)
           ->_process_raw($raw)
-          ->_state_set(self::EXISTS, true);
+          ->_state_set(self::EXISTS);
+        self::$Vault->Update($this);
       }
     }
 
@@ -107,60 +142,77 @@ abstract class PropOnlyModel extends Core implements IModel
       : $this->dataInsert();
 
     if ($dataDo())
-      $this->_state_set(self::EXISTS);
+      $this->load();
+    else
+      $this->_state_set(self::ERROR);
 
     return $this;
   }
 
   public function remove(): PropOnlyModel
   {
-    $key = (static::class)::P_KEY;
     $res = $this->dataRemove();
-    if (!$res)
-      1;
-
-    $this->_state_set(self::VOID);
-    $this->{$key} = null;
-
+    if ($res) {
+      $this->_state_set(self::VOID);
+      self::$Vault->Remove($this);
+    } else
+      $this->_state_set(self::ERROR);
     return $this;
   }
   #endregion
 
 
   #region QUERY
+  private function _prepare_query($data)
+  {
+    $Query = self::$Query[static::class];
+    $SB = $Query
+      ->params()
+      ->clean();
+
+    foreach ($data as $p => $v)
+      $SB->where(<<<WH
+        `$p` = '$v'
+        WH);
+    return $Query;
+  }
+
   protected function dataInsert(): bool
   {
     $data = $this->_get_maked_data();
 
     self::$Query[static::class]->insert($data);
-    $list_Error = DDWError::FindErrorsReason(__METHOD__, $count_Error);
+    $list_Error = DDWError::FindErrorsReason(__METHOD__, false, $count_Error);
 
     return !$count_Error;
   }
 
-  protected function dataUpdate()
+  protected function dataGet()
   {
-    exit();
     $data = $this->_get_maked_data();
-    $key = $this->{(static::class)::P_KEY};
+    $Query = $this->_prepare_query($this->_get_maked_data());
 
-    $res = self::$Query[static::class]->update($key, $data);
+    $res = $Query->select($data);
+
     return $res;
   }
 
-  protected function dataGet()
+  protected function dataUpdate()
   {
-    $key = $this->{(static::class)::P_KEY};
+    $data = $this->_get_maked_data();
+    $Query = $this->_prepare_query($this->_storage_raw());
 
-    $res = self::$Query[static::class]->select($key);
+    $res = $Query->update($data);
+
     return $res;
   }
 
   protected function dataRemove()
   {
-    $key = $this->{(static::class)::P_KEY};
+    $Query = $this->_prepare_query($this->_storage_raw());
 
-    $res = self::$Query[static::class]->remove($key);
+    $res = $Query->remove();
+
     return $res;
   }
   #endregion

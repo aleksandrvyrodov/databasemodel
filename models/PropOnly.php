@@ -10,4 +10,5 @@ class PropOnly extends PropOnlyModel
 
   protected string $prop  = '';
   protected string $value = '';
+  protected string $valuex = '';
 }

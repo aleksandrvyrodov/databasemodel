@@ -185,8 +185,8 @@ class SimpleBuilder
 
   public function where(string $where = null, string $cond = self::AND)
   {
-    if (is_null($where)) {
-      if (!$this->_storage_sleep)
+    if (is_null($where) || $where === self::WHERE) {
+      if (!$this->_storage_sleep && $where !== self::WHERE)
         $storage = $this->_storage['where'] ?? [];
       $where = array_merge(
         $storage ?? [],

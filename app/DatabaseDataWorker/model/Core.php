@@ -2,7 +2,8 @@
 
 namespace JrAppBox\DatabaseDataWorker\Model;
 
-use JrAppBox\DatabaseDataWorker\Error\DDWException;
+use JrAppBox\DatabaseDataWorker\Contractor\SimpleStorage;
+use JrAppBox\DatabaseDataWorker\Error\DDWError;
 
 abstract class Core implements IModel
 {
@@ -10,18 +11,26 @@ abstract class Core implements IModel
   const CHECK  = 0b0010;
   const TEMPL  = 0b0100;
   const EXISTS = 0b1000;
+  const ERROR  = 0b10000;
   const VOID = 0b0;
 
   const CHAIN = true;
 
+  const EMPTY_MD5_HASH = 'd751713988987e9331980363e24189ce';
+
   const SET = 0;
   const GET = 1;
 
-  public array $freeQ = [];
-  protected int $_state = self::VOID;
-  protected array $_raw = [];
+  public     array  $freeQ = [];
+  protected  int    $_state = self::VOID;
+  protected  array  $_raw = [];
+  protected ?string $_hash = null;
 
   static protected array $Query = [];
+  static protected SimpleStorage $Vault;
+
+  abstract static public function Init(string $returned, ...$argc);
+
 
   public function __toString()
   {
@@ -32,6 +41,28 @@ abstract class Core implements IModel
 
 
   #region DATA SET/GET
+  public function getHash(): ?string
+  {
+    return $this->_hash;
+  }
+
+  public static function GenerateHash(array $data)
+  {
+    $hash = md5(json_encode($data)) . '|' . (static::class)::TABLE;
+    if (self::EMPTY_MD5_HASH !== $hash)
+      return $hash;
+    else
+      return false;
+  }
+
+  protected function _set_hash(): IModel
+  {
+    ($hash = self::GenerateHash($this->_raw))
+      && $this->_hash = $hash;
+
+    return $this;
+  }
+
   protected function _data_transformation(string $prop, $data, int $do)
   {
     return $data;
@@ -41,8 +72,11 @@ abstract class Core implements IModel
   {
     if (is_null($raw))
       return $this->_raw;
-    else
-      return $this;
+
+    $this->_raw = $raw;
+    $this->_set_hash();
+
+    return $this;
   }
 
   protected function _process_raw(array $raw)
@@ -108,7 +142,7 @@ abstract class Core implements IModel
         $this->{$name} = $mirror =  $value;
       else
         $this->freeQ[$name] = $value;
-    } catch (DDWException $me) {
+    } catch (DDWError $me) {
       1; //$me->storage('Mismatch of types', 1);
     } finally {
       return $this;
@@ -132,8 +166,11 @@ abstract class Core implements IModel
       case self::VOID:
         $this->_state = self::VOID;
         break;
+      case self::ERROR:
+        $this->_state |= self::ERROR;
+        break;
       default:
-        DDWException::Add("Undefinded state",   2);
+        DDWError::Add("Undefinded state",   2);
         break;
     }
     return $this;
@@ -155,6 +192,11 @@ abstract class Core implements IModel
   public function exists(): bool
   {
     return (bool)($this->_state & self::EXISTS);
+  }
+
+  public function error(): bool
+  {
+    return (bool)($this->_state & self::ERROR);
   }
   #endregion
 }

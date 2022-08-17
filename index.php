@@ -1,8 +1,14 @@
+<pre>
 <?php
+set_time_limit(0);
+ini_set('error_reporting', E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 
 #region INITAL
 use JrAppBox\Autoloader;
 use JrAppBox\DatabaseDataWorker\Contractor\SimpleBuilder;
+use JrAppBox\DatabaseDataWorker\Error\DDWError;
 use Models\{
   FkOnly,
   FkPk,
@@ -29,40 +35,61 @@ require_once __DIR__ . '/app/inf.php';
 
 // $PkOnly = new PkOnly;
 // $PkOnlyAi = new PkOnlyAi;
+
 /*-----------------------------------------*/
 
-$PropOnly = PropOnly::Create();
+/* var_dump(
+  PropOnly::Create()
+    ->setProp('prop', 'table-2')
+    ->setProp('value', 'color')
+    ->load()
+    ->generateHash()
+); */
+
+/* $permitted_chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+
+
+for ($i = 0; $i < 50000; $i++) {
+  PropOnly::Init(PropOnly::class)
+    ->setProp('prop', substr(str_shuffle($permitted_chars), 0, 16))
+    ->setProp('value', substr(str_shuffle($permitted_chars), 0, 16))
+    ->save();
+} */
+
+/*-----------------------------------------*/
 
 try {
-  $PropOnly
+
+  // var_dump(PropOnly::$Vault->Storage);
+  // var_dump($list_PropOnly);
+
+  /* $list_PropOnly = PropOnly::GetAll();
+  // $PropOnly = $list_PropOnly[0];
+
+  var_dump($list_PropOnly); */
+
+
+
+  $PropOnly = PropOnly::Create(PropOnly::TEMPL)
     ->setProp('prop', 'Hello')
-    ->setProp('value', 'World')
-    ->save();
+    ->setProp('value', 'World4')
+    ->load();
+
+  /* var_dump($PropOnly);
+  $PropOnly
+    ->setProp('value', 'city')
+    ->remove();
+  var_dump($PropOnly); */
+
+
+
+
+
+
+  #
 } catch (\Throwable $th) {
-  echo "<pre>";
   var_dump($th->getMessage());
-  echo "</pre>";
+  var_dump($th->getTrace());
 }
 
 /*-----------------------------------------*/
-
-
-
-$SB = new SimpleBuilder;
-
-$SB
-  /* ->select('COND(a,\'\',b)', 'fork')
-  ->select('SUM(c,b)', 'sum') */
-  /* ->where('xx > 5')
-  ->where('xx < 7')
-  ->where('yy = 1', 'OR')
-  ->order('name', 'ASC')
-  ->order('id', 'DESC')
-  ->limitation(1) */;
-
-echo "<pre>";
-// var_dump(PropOnly::Get());
-var_dump($SB->build());
-var_dump($PropOnly);
-// var_dump($PkOnlyAi);
-echo "</pre>";
