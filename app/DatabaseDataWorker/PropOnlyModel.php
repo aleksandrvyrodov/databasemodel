@@ -92,7 +92,7 @@ abstract class PropOnlyModel extends Core implements IModel
     return $returned;
   }
 
-  static public function Get($key_v = null, $returned = null): ?PropOnlyModel //FAR
+  static public function Get($key_v = null, $returned = null): ?PropOnlyModel
   {
     if ($returned === self::TEMPL)
       return static::Create();

@@ -12,7 +12,7 @@ abstract class Core implements IModel
   const TEMPL  = 0b0100;
   const EXISTS = 0b1000;
   const ERROR  = 0b10000;
-  const VOID = 0b0;
+  const VOID   = 0b0;
 
   const CHAIN = true;
 

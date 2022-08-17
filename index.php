@@ -59,31 +59,11 @@ for ($i = 0; $i < 50000; $i++) {
 /*-----------------------------------------*/
 
 try {
-
-  // var_dump(PropOnly::$Vault->Storage);
-  // var_dump($list_PropOnly);
-
-  /* $list_PropOnly = PropOnly::GetAll();
-  // $PropOnly = $list_PropOnly[0];
-
-  var_dump($list_PropOnly); */
+  // $PkOnly = PkOnly::Get(258);
 
 
 
-  $PropOnly = PropOnly::Create(PropOnly::TEMPL)
-    ->setProp('prop', 'Hello')
-    ->setProp('value', 'World4')
-    ->load();
-
-  /* var_dump($PropOnly);
-  $PropOnly
-    ->setProp('value', 'city')
-    ->remove();
-  var_dump($PropOnly); */
-
-
-
-
+  var_dump(PkOnly::GetAll());
 
 
   #

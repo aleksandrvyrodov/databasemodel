@@ -10,6 +10,7 @@ class SimpleStorage
   private \SplObjectStorage $Storage;
   private static SimpleStorage $SimpleStorage;
   private static array $hash_table = [];
+  public static array $indexed = [];
 
   private function __construct()
   {
@@ -40,6 +41,8 @@ class SimpleStorage
     if ($this->CheckHash($Model)) {
       $Storage->attach($Model, $Model->getHash());
       self::$hash_table[$Model->getHash()] = $Model;
+      if (isset(self::$indexed[get_class($Model)]))
+        self::SetIndex($Model);
     }
 
     return $this;
@@ -93,5 +96,34 @@ class SimpleStorage
     }
 
     return $this;
+  }
+
+  public function InitStorageIndex($model)
+  {
+    if (!isset(self::$indexed[$model])) {
+      self::$indexed[$model] = [];
+
+      foreach (['PK', 'FK', 'INDEX'] as $cur_index)
+        try {
+          if (
+            ($const = new \ReflectionClassConstant($model, $cur_index))
+            && ($props = $const->getValue())
+          ) {
+            gettype($props) === 'string'
+              && $props = [$props];
+
+            foreach ($props as $prop)
+              self::$indexed[$model][$prop] = [];
+          }
+          #
+        } catch (\ReflectionException $Re) {
+        }
+    }
+    return $this;
+  }
+
+  private function SetIndex($Model, $index = null)
+  {
+    var_dump('xxx'); //FAR
   }
 }
