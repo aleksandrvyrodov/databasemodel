@@ -9,6 +9,8 @@ class DDWError extends \Exception
   static  \SplObjectStorage $storage_DDWException;
   static ?DDWError $LastError = null;
 
+  const DETACH = 1;
+  const SAFE   = 0;
 
   public function __construct($message, $code = 0, \Throwable $previous = null)
   {
@@ -38,7 +40,7 @@ class DDWError extends \Exception
     return new self($message, $code, $previous);
   }
 
-  static function FindErrorsReason($reason, &$finded = 0): array
+  static function FindErrorsReason($reason, int $detach = self::DETACH, &$finded = 0): array
   {
     $export_Storage = [];
     $Storage = self::LoadStorage();
@@ -50,7 +52,8 @@ class DDWError extends \Exception
 
       if (in_array($reason, $data)) {
         $finded = array_unshift($export_Storage, $object);
-        $Storage->detach($object);
+        if ($detach === self::DETACH)
+          $Storage->detach($object);
       } else
         $Storage->next();
     }
@@ -58,12 +61,14 @@ class DDWError extends \Exception
     return $export_Storage;
   }
 
-  static public function LastError(): ?DDWError
+  static public function LastError(int $detach = self::DETACH): ?DDWError
   {
     $LastError = self::$LastError;
-    self::LoadStorage()
-      ->detach($LastError);
-    self::$LastError = null;
+    if ($detach === self::DETACH) {
+      self::LoadStorage()
+        ->detach($LastError);
+      self::$LastError = null;
+    }
     return $LastError;
   }
 
@@ -72,9 +77,10 @@ class DDWError extends \Exception
     return self::LoadStorage();
   }
 
-  static public function CleanErrors($LastError = true): void
+  static public function CleanErrors($LastError = self::DETACH): void
   {
     self::$storage_DDWException = new \SplObjectStorage();
-    self::$LastError = null;
+    if ($LastError === self::DETACH)
+      self::$LastError = null;
   }
 }
