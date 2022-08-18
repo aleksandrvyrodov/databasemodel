@@ -63,7 +63,8 @@ try {
 
 
 
-  var_dump(PkOnly::GetAll());
+  var_dump(PkOnly::GetAll(1)[0]);
+  // var_dump(PropOnly::GetAll(1)[0]);
 
 
   #

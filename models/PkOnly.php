@@ -14,4 +14,6 @@ class PkOnly extends PkOnlyModel
 
   protected ?int $phone = null;
   protected ?string $name = null;
+
+  
 }

@@ -8,7 +8,7 @@ use JrAppBox\DatabaseDataWorker\Contractor\SimpleQuery;
 use JrAppBox\DatabaseDataWorker\Model\Core;
 use JrAppBox\DatabaseDataWorker\Model\IModel;
 
-abstract class DoubleKeyModel extends Core implements IModel
+abstract class xxxDoubleKeyModel extends Core implements IModel
 {
   static array $Builder = [];
 

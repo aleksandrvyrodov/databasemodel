@@ -7,7 +7,7 @@ use JrAppBox\DatabaseDataWorker\Contractor\SimpleQuery;
 use JrAppBox\DatabaseDataWorker\Model\Core;
 use JrAppBox\DatabaseDataWorker\Model\IModel;
 
-abstract class PropOnlyModel extends Core
+abstract class xxxPropOnlyModel extends Core
 {
   #region INITED
   static protected function InitQuery()

@@ -9,10 +9,6 @@ interface IModel
   function exists(): bool;
   function error(): bool;
 
-  function load(?array &$raw = null): IModel;
-  function save(): IModel;
-  function remove(): IModel;
-
   function __isset($name): bool;
   function __get(string $name);
 

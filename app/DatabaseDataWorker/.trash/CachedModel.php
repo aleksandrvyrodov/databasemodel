@@ -4,7 +4,7 @@ namespace JrAppBox\DatabaseDataWorker;
 
 use JrAppBox\DatabaseDataWorker\Model\IModel;
 
-abstract class CachedModel extends DefaultModel implements IModel
+abstract class xxxCachedModel extends DefaultModel implements IModel
 {
 
   const STORAGE_ONCE = true;

@@ -10,7 +10,7 @@ use JrAppBox\DatabaseDataWorker\Model\IModel;
 use PDO;
 use SCCT\Model\Model;
 
-abstract class DefaultModel extends Core implements IModel
+abstract class xxxDefaultModel extends Core implements IModel
 {
 
   #region INITED
