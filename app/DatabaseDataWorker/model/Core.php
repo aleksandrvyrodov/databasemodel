@@ -2,7 +2,7 @@
 
 namespace JrAppBox\DatabaseDataWorker\Model;
 
-use JrAppBox\DatabaseDataWorker\Contractor\SimpleStorage;
+use JrAppBox\DatabaseDataWorker\Contractor\Storage\IStorage;
 use JrAppBox\DatabaseDataWorker\Error\DDWError;
 
 abstract class Core implements IModel
@@ -13,6 +13,7 @@ abstract class Core implements IModel
   const EXISTS = 0b1000;
   const ERROR  = 0b10000;
   const VOID   = 0b0;
+  const FULL   = 0b11111;
 
   const CHAIN = true;
 
@@ -27,7 +28,6 @@ abstract class Core implements IModel
   protected ?string $_hash = null;
 
   static protected array $Query = [];
-  static protected SimpleStorage $Vault;
 
   abstract static public function Init(string $returned, ...$argc);
 
@@ -138,9 +138,10 @@ abstract class Core implements IModel
   public function setProp(string $name = '', $value, &$mirror = null): IModel
   {
     try {
-      if (property_exists($this, $name))
+      if (property_exists($this, $name)) {
         $this->{$name} = $mirror =  $value;
-      else
+        $this->_state_set(self::UPDATE);
+      } else
         $this->freeQ[$name] = $value;
     } catch (DDWError $me) {
       1; //$me->storage('Mismatch of types', 1);
@@ -157,8 +158,13 @@ abstract class Core implements IModel
       case self::EXISTS:
         if ($force)
           $this->_state = self::EXISTS;
-        else
+        else {
           $this->_state |= self::EXISTS;
+          $this->_state &= (self::FULL ^ self::UPDATE);
+        }
+        break;
+      case self::UPDATE:
+        $this->_state |= self::UPDATE;
         break;
       case self::TEMPL:
         $this->_state = self::TEMPL;
@@ -192,6 +198,11 @@ abstract class Core implements IModel
   public function exists(): bool
   {
     return (bool)($this->_state & self::EXISTS);
+  }
+
+  public function modif(): bool
+  {
+    return (bool)($this->_state & self::UPDATE);
   }
 
   public function error(): bool

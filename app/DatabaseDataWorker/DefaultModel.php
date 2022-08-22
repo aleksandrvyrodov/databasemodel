@@ -4,29 +4,31 @@ namespace JrAppBox\DatabaseDataWorker;
 
 use JrAppBox\DatabaseDataWorker\Contractor\SimpleBuilder;
 use JrAppBox\DatabaseDataWorker\Contractor\SimpleQuery;
-use JrAppBox\DatabaseDataWorker\Contractor\SimpleStorage;
+use JrAppBox\DatabaseDataWorker\Contractor\Storage\IStorage;
+use JrAppBox\DatabaseDataWorker\Contractor\Storage\SimpleStorage;
 use JrAppBox\DatabaseDataWorker\Error\DDWError;
 use JrAppBox\DatabaseDataWorker\Model\Core;
-use JrAppBox\DatabaseDataWorker\Model\IModel;
 
 abstract class DefaultModel extends Core
 {
+
+  static protected IStorage $Vault;
 
   #region INITED
   static public function Init(string $returnded, ...$argc)
   {
     try {
-      $Query = self::InitQuery();
-      $Vault = self::InitVault();
+      $Query = static::InitQuery();
+      $Vault = static::InitVault();
     } catch (\Throwable $Th) {
       DDWError::Add('Fail inited model (' . static::class . ')', 1000, $Th);
       return false;
     }
 
     switch ($returnded) {
-      case SimpleQuery::class:
+      case get_class($Query):
         return $Query;
-      case SimpleStorage::class:
+      case get_class($Vault):
         return $Vault;
       case static::class:
         return new static();
@@ -79,15 +81,14 @@ abstract class DefaultModel extends Core
     return self::_ListRawToData($Query->list());
   }
 
-  protected static function _ListRawToData(array $list_raw)
+  protected static function _ListRawToData(array $list_raw): array
   {
     $returned = [];
 
     foreach ($list_raw as $raw)
-      $returned[] = self::$Vault->Get(self::GenerateHash($raw))
+      $returned[] = static::$Vault->Get(self::GenerateHash($raw))
         ?? new static($raw, self::EXISTS, true);
     // $returned[] = new static($raw, self::EXISTS, true);
-
 
     return $returned;
   }
@@ -115,7 +116,8 @@ abstract class DefaultModel extends Core
 
     if ($impression) {
       $this->_storage_raw($raw);
-      self::$Vault->Set($this);
+      static::$Vault->Set($this);
     }
   }
+  #endregion
 }

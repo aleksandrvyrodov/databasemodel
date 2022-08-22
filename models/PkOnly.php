@@ -10,10 +10,8 @@ class PkOnly extends PkOnlyModel
   const AI    = false;
   const PK    = 'phone';
   const FK    = false;
-  const INDEX = false;
+  const INDEX = 'name';
 
   protected ?int $phone = null;
   protected ?string $name = null;
-
-  
 }

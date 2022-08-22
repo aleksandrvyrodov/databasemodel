@@ -2,19 +2,42 @@
 
 namespace JrAppBox\DatabaseDataWorker;
 
-use JrAppBox\DatabaseDataWorker\Contractor\SimpleStorage;
+use JrAppBox\DatabaseDataWorker\Contractor\Storage\IndexedStorage;
+use JrAppBox\DatabaseDataWorker\Contractor\Storage\IStorage;
 use JrAppBox\DatabaseDataWorker\Model\IActionModel;
 use JrAppBox\DatabaseDataWorker\Error\DDWError;
 
 abstract class PkOnlyModel extends DefaultModel implements IActionModel
 {
+  static protected IStorage $Vault;
 
-  #region INITED
-  static public function InitVault(): SimpleStorage
+  static function GV()
   {
-    parent::InitVault();
+    return self::$Vault;
+  }
+  #region INITED
+  static protected function InitVault(): IndexedStorage
+  {
+    !isset(self::$Vault)
+      && self::$Vault = IndexedStorage::Init(static::class);
 
-    return self::$Vault->InitStorageIndex(static::class);
+    self::$Vault->InitStorageIndex(static::class);
+
+    return self::$Vault;
+  }
+  #endregion
+
+  #region ENTRANCE
+  protected function __construct(array $raw = [], $state = self::TEMPL, $impression = false)
+  {
+    $this
+      ->_process_raw($raw)
+      ->_state_set($state);
+
+    if ($impression) {
+      $this->_storage_raw($raw);
+      static::$Vault->Set($this);
+    }
   }
   #endregion
 

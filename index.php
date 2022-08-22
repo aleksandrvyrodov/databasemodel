@@ -63,7 +63,28 @@ try {
 
 
 
-  var_dump(PkOnly::GetAll(1)[0]);
+  PkOnly::GetAll(3);
+  $list_PkOnly = PkOnly::GetAll(3);
+
+
+
+  // var_dump($list_PkOnly);
+
+  // $list_PkOnly[1]->remove();
+
+  $list_PkOnly[0]
+    ->setProp('name', 'Vax')
+    ->save();
+
+  $list_PkOnly[0]
+  ->setProp('name', 'Vax_UPD')
+  ->save();
+
+
+  var_dump(PkOnly::GV()::$IndexedStorage);
+  var_dump(PkOnly::GV()::$indexed);
+  // var_dump($list_PkOnly[0]);
+  // var_dump(PkOnly::GetAll(3));
   // var_dump(PropOnly::GetAll(1)[0]);
 
 
@@ -71,6 +92,7 @@ try {
 } catch (\Throwable $th) {
   var_dump($th->getMessage());
   var_dump($th->getTrace());
+  var_dump(DDWError::AllErrors());
 }
 
 /*-----------------------------------------*/

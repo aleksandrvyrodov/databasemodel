@@ -8,6 +8,7 @@ interface IModel
   function ready(): bool;
   function exists(): bool;
   function error(): bool;
+  function modif(): bool;
 
   function __isset($name): bool;
   function __get(string $name);
