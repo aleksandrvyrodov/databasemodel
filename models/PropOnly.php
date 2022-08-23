@@ -2,9 +2,9 @@
 
 namespace Models;
 
-use JrAppBox\DatabaseDataWorker\PropOnlyModel;
+use JrAppBox\DatabaseDataWorker\LackKeyModel;
 
-class PropOnly extends PropOnlyModel
+class PropOnly extends LackKeyModel
 {
   const TABLE = 'prop_only';
 

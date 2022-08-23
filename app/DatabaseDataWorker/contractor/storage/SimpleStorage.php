@@ -9,7 +9,7 @@ class SimpleStorage implements IStorage
 {
   protected \SplObjectStorage $Storage;
   protected static SimpleStorage $SimpleStorage;
-  public static array $hash_table = [];
+  public static array $hash_table = []; //FAR
 
   protected function __construct()
   {

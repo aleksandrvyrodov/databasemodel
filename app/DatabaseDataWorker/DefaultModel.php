@@ -87,7 +87,7 @@ abstract class DefaultModel extends Core
 
     foreach ($list_raw as $raw)
       $returned[] = static::$Vault->Get(self::GenerateHash($raw))
-        ?? new static($raw, self::EXISTS, true);
+        ?? new static($raw, self::EXISTS);
     // $returned[] = new static($raw, self::EXISTS, true);
 
     return $returned;
@@ -108,13 +108,13 @@ abstract class DefaultModel extends Core
     return self::Init(static::class);
   }
 
-  protected function __construct(array $raw = [], $state = self::TEMPL, $impression = false)
+  protected function __construct(array $raw = [], $state = self::TEMPL)
   {
     $this
       ->_process_raw($raw)
-      ->_state_set($state);
+      ->_state_set($state, true);
 
-    if ($impression) {
+    if ($state === self::EXISTS) {
       $this->_storage_raw($raw);
       static::$Vault->Set($this);
     }

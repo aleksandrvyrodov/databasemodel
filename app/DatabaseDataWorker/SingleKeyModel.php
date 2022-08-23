@@ -7,7 +7,7 @@ use JrAppBox\DatabaseDataWorker\Contractor\Storage\IStorage;
 use JrAppBox\DatabaseDataWorker\Model\IActionModel;
 use JrAppBox\DatabaseDataWorker\Error\DDWError;
 
-abstract class PkOnlyModel extends DefaultModel implements IActionModel
+abstract class SingleKeyModel extends DefaultModel implements IActionModel
 {
   static protected IStorage $Vault;
 
@@ -28,21 +28,19 @@ abstract class PkOnlyModel extends DefaultModel implements IActionModel
   #endregion
 
   #region ENTRANCE
-  protected function __construct(array $raw = [], $state = self::TEMPL, $impression = false)
+  static public function Get($key_v = null, $returned = null): ?DefaultModel
   {
-    $this
-      ->_process_raw($raw)
-      ->_state_set($state);
-
-    if ($impression) {
-      $this->_storage_raw($raw);
-      static::$Vault->Set($this);
-    }
+    if (
+      $returned === self::TEMPL
+    )
+      return static::Create();
+    else
+      return null;
   }
   #endregion
 
   #region INTERFACE
-  public function load(?array &$raw = null): PkOnlyModel
+  public function load(?array &$raw = null): SingleKeyModel
   {
     if ($this->ready()) {
       $raw = $this->dataGet();
@@ -58,7 +56,7 @@ abstract class PkOnlyModel extends DefaultModel implements IActionModel
     return $this;
   }
 
-  public function save(): PkOnlyModel
+  public function save(): SingleKeyModel
   {
     $dataDo = fn () => $this->exists()
       ? $this->dataUpdate()
@@ -72,7 +70,7 @@ abstract class PkOnlyModel extends DefaultModel implements IActionModel
     return $this;
   }
 
-  public function remove(): PkOnlyModel
+  public function remove(): SingleKeyModel
   {
     $res = $this->dataRemove();
     if ($res) {

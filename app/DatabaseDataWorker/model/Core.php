@@ -30,7 +30,7 @@ abstract class Core implements IModel
   static protected array $Query = [];
 
   abstract static public function Init(string $returned, ...$argc);
-
+  abstract protected function __construct(array $raw = [], $state = self::TEMPL);
 
   public function __toString()
   {

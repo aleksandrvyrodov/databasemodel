@@ -5,10 +5,10 @@ namespace JrAppBox\DatabaseDataWorker;
 use JrAppBox\DatabaseDataWorker\Error\DDWError;
 use JrAppBox\DatabaseDataWorker\Model\IActionModel;
 
-abstract class PropOnlyModel extends DefaultModel implements IActionModel
+abstract class LackKeyModel extends DefaultModel implements IActionModel
 {
   #region INTERFACE
-  public function load(?array &$raw = null): PropOnlyModel
+  public function load(?array &$raw = null): LackKeyModel
   {
     if ($this->ready()) {
       $raw = $this->dataGet();
@@ -24,7 +24,7 @@ abstract class PropOnlyModel extends DefaultModel implements IActionModel
     return $this;
   }
 
-  public function save(): PropOnlyModel
+  public function save(): LackKeyModel
   {
     $dataDo = fn () => $this->exists()
       ? $this->dataUpdate()
@@ -38,7 +38,7 @@ abstract class PropOnlyModel extends DefaultModel implements IActionModel
     return $this;
   }
 
-  public function remove(): PropOnlyModel
+  public function remove(): LackKeyModel
   {
     $res = $this->dataRemove();
     if ($res) {

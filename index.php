@@ -61,24 +61,30 @@ for ($i = 0; $i < 50000; $i++) {
 try {
   // $PkOnly = PkOnly::Get(258);
 
-
-
   PkOnly::GetAll(3);
   $list_PkOnly = PkOnly::GetAll(3);
 
 
+  $list_PkOnly[0]
+    ->setProp('xxx', 123)
+    ->setProp('name', 'Xibi')
+    ->save();
 
   // var_dump($list_PkOnly);
 
   // $list_PkOnly[1]->remove();
+
+  /* $list_PkOnly[0]
+    ->setProp('name', 'Vax_UPD')
+    ->save();
 
   $list_PkOnly[0]
     ->setProp('name', 'Vax')
     ->save();
 
   $list_PkOnly[0]
-  ->setProp('name', 'Vax_UPD')
-  ->save();
+    ->setProp('name', 'Xibi')
+    ->save(); */
 
 
   var_dump(PkOnly::GV()::$IndexedStorage);

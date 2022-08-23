@@ -8,8 +8,8 @@ use SplObjectStorage;
 
 class IndexedStorage extends SimpleStorage
 {
-  public static array $indexed = [];
-  public static IndexedStorage $IndexedStorage;
+  public static array $indexed = []; // FAR
+  public static IndexedStorage $IndexedStorage; // FAR
 
   public static function Init(): IndexedStorage
   {
